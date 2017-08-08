@@ -20,6 +20,8 @@ This project includes:
   jackson-databind under The Apache Software License, Version 2.0 or Lesser Gnu Public License (LGPL), Version 2.1
   Scribe OAuth Library under MIT
   Scribe UP under The Apache Software License, Version 2.0
+  ScribeJava APIs under MIT
+  ScribeJava Core under MIT
   ScribeUP Extensions under Apache License, Version 2.0
   SLF4J API Module under MIT License
 
