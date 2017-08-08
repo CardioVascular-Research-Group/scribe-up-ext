@@ -4,7 +4,7 @@ package org.eurekaclinical.scribeupext.provider;
  * #%L
  * Eureka! Clinical ScribeUP Extensions
  * %%
- * Copyright (C) 2014 Emory University
+ * Copyright (C) 2014, 2017 Emory University & The Johns Hopkins University
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,79 +21,136 @@ package org.eurekaclinical.scribeupext.provider;
  */
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.github.scribejava.core.builder.ServiceBuilder;
+import com.github.scribejava.core.model.OAuth2AccessToken;
+import com.github.scribejava.core.model.OAuthRequest;
+import com.github.scribejava.core.model.Response;
+import com.github.scribejava.core.model.Token;
+import com.github.scribejava.core.model.Verb;
+import com.github.scribejava.core.oauth.OAuth20Service;
+
+import java.io.IOException;
+import java.util.concurrent.ExecutionException;
+
 import org.eurekaclinical.scribeupext.GlobusApi;
 import org.eurekaclinical.scribeupext.profile.EurekaAttributesDefinition;
 import org.eurekaclinical.scribeupext.profile.GlobusAttributesDefinition;
 import org.eurekaclinical.scribeupext.profile.GlobusProfile;
-import org.eurekaclinical.scribeupext.service.GlobusOAuth20ServiceImpl;
-import java.util.concurrent.TimeUnit;
-import org.scribe.model.OAuthConfig;
-import org.scribe.model.ProxyOAuthRequest;
-import org.scribe.model.Response;
-import org.scribe.model.SignatureType;
-import org.scribe.model.Token;
-import org.scribe.model.Verb;
 import org.scribe.up.profile.JsonHelper;
 import org.scribe.up.profile.UserProfile;
-import org.scribe.up.provider.BaseOAuth20Provider;
 import org.scribe.up.provider.exception.HttpException;
 
 /**
  *
  * @author Andrew Post
+ * @author Stephen Granite
  */
-public class GlobusProvider extends BaseOAuth20Provider {
-	@Override
+public class GlobusProvider {
+
+	private OAuth20Service service;
+	private String key, secret, callBackUrl, scope, state;
+
 	protected GlobusProvider newProvider() {
 		return new GlobusProvider();
 	}
-	
-	@Override
+
 	protected void internalInit() {
-		this.service = new GlobusOAuth20ServiceImpl(new GlobusApi(),
-			new OAuthConfig(this.key, this.secret, this.callbackUrl,
-			SignatureType.Header, "user", null), this.proxyHost, 
-				this.proxyPort);
-	}
-	
-	@Override
-	protected String getProfileUrl() {
-		return "https://nexus.api.globusonline.org/users/%s";
+		setService(new ServiceBuilder(key)
+				.apiSecret(secret)
+				.callback(callBackUrl)
+				.scope(scope)
+				.state(state)
+				.build(GlobusApi.instance()));
 	}
 
-	@Override
-	protected String sendRequestForData(Token accessToken, String dataUrl) throws HttpException {
-		System.out.println("Access token is " + accessToken.getSecret() + "; " + accessToken.getToken());
-		String dataUrlCompleted = String.format(dataUrl, ((GlobusOAuth20ServiceImpl) this.service).getUsername());
-		System.out.println("dataUrlCompleted: " + dataUrlCompleted);
-        final ProxyOAuthRequest request = new ProxyOAuthRequest(Verb.GET, dataUrlCompleted, this.proxyHost, this.proxyPort);
-        if (this.connectTimeout != 0) {
-            request.setConnectTimeout(this.connectTimeout, TimeUnit.MILLISECONDS);
-        }
-        if (this.readTimeout != 0) {
-            request.setReadTimeout(this.readTimeout, TimeUnit.MILLISECONDS);
-        }
-        this.service.signRequest(accessToken, request);
-		request.addHeader("Content-Type", "application/json");
-        final Response response = request.send();
-        final int code = response.getCode();
-        final String body = response.getBody();
-        if (code != 200) {
-            throw new HttpException(code, body);
-        }
-        return body;
+	public String getProfileUrl() {
+		return "https://auth.globus.org/v2/oauth2/userinfo";
 	}
-	
-	@Override
-	protected UserProfile extractUserProfile(final String body) {
+
+	public String sendRequestForData(Token accessToken, String dataUrl) throws HttpException {
+		String body = "";
+		try {
+			OAuthRequest request = new OAuthRequest(Verb.GET, getProfileUrl());
+			getService().signRequest((OAuth2AccessToken) accessToken, request);
+			Response response = getService().execute(request);
+			int code = response.getCode();
+			body = response.getBody();
+			if (code != 200) {
+				throw new HttpException(code, body);
+			}
+		} catch (InterruptedException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (ExecutionException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} 
+		return body;
+	}
+
+
+	public UserProfile extractUserProfile(final String body) {
 		GlobusProfile profile = new GlobusProfile();
 		JsonNode json = JsonHelper.getFirstNode(body);
 		if (json != null) {
 			profile.setId(JsonHelper.get(json, GlobusAttributesDefinition.USERNAME));
-			profile.addAttribute(EurekaAttributesDefinition.USERNAME, JsonHelper.get(json, GlobusAttributesDefinition.USERNAME));
+			profile.addAttribute(EurekaAttributesDefinition.USERNAME, JsonHelper.get(json, GlobusAttributesDefinition.USERNAME).toString().split("@")[0]);
 			profile.addAttribute(EurekaAttributesDefinition.FULLNAME, JsonHelper.get(json, GlobusAttributesDefinition.FULLNAME));
 			profile.addAttribute(EurekaAttributesDefinition.EMAIL, JsonHelper.get(json, GlobusAttributesDefinition.EMAIL));
 		}
 		return profile;
 	}
+
+	public OAuth20Service getService() {
+		internalInit();
+		return service;
+	}
+
+	protected void setService(OAuth20Service service) {
+		this.service = service;
+	}
+
+	public String getKey() {
+		return key;
+	}
+
+	public void setKey(String key) {
+		this.key = key;
+	}
+
+	public String getSecret() {
+		return secret;
+	}
+
+	public void setSecret(String secret) {
+		this.secret = secret;
+	}
+
+	public String getCallBackUrl() {
+		return callBackUrl;
+	}
+
+	public void setCallBackUrl(String callBackUrl) {
+		this.callBackUrl = callBackUrl;
+	}
+
+	public String getState() {
+		return state;
+	}
+
+	public void setState(String state) {
+		this.state = state;
+	}
+
+	public String getScope() {
+		return scope;
+	}
+
+	public void setScope(String scope) {
+		this.scope = scope;
+	}
+	
 }

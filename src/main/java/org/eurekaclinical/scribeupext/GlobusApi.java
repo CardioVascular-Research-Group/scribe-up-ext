@@ -4,7 +4,7 @@ package org.eurekaclinical.scribeupext;
  * #%L
  * Eureka! Clinical ScribeUP Extensions
  * %%
- * Copyright (C) 2014 Emory University
+ * Copyright (C) 2014, 2017 Emory University & The Johns Hopkins University
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,41 +20,53 @@ package org.eurekaclinical.scribeupext;
  * #L%
  */
 
-import org.scribe.builder.api.DefaultApi20;
-import org.scribe.extractors.AccessTokenExtractor;
-import org.scribe.extractors.JsonTokenExtractor;
-import org.scribe.model.OAuthConfig;
-import org.scribe.model.Verb;
-import org.scribe.utils.OAuthEncoder;
-import org.scribe.utils.Preconditions;
+import com.github.scribejava.core.builder.api.DefaultApi20;
+import com.github.scribejava.core.extractors.OAuth2AccessTokenExtractor;
+import com.github.scribejava.core.extractors.OAuth2AccessTokenJsonExtractor;
+import com.github.scribejava.core.extractors.TokenExtractor;
+import com.github.scribejava.core.model.OAuth2AccessToken;
+import com.github.scribejava.core.model.Verb;
 
 /**
  *
  * @author Andrew Post
+ * @author Stephen Granite
  */
 public class GlobusApi extends DefaultApi20 {
-	private static final String AUTHORIZE_URL = "https://www.globus.org/OAuth?response_type=code&client_id=%s&redirect_uri=%s";
-	
-	@Override
-	public String getAccessTokenEndpoint() {
-		return "https://nexus.api.globusonline.org/goauth/token";
-	}
-	
-	@Override
-	public Verb getAccessTokenVerb() {
-		return Verb.POST;
-	}
 
-	@Override
-	public AccessTokenExtractor getAccessTokenExtractor() {
-		return new JsonTokenExtractor();
-	}
-	
-	@Override
-	public String getAuthorizationUrl(OAuthConfig config) {
-		Preconditions.checkValidUrl(config.getCallback(),
-				"Must provide a valid url as callback.");
-		return String.format(AUTHORIZE_URL, config.getApiKey(), 
-				OAuthEncoder.encode(config.getCallback()));
-	}
+    public GlobusApi() {
+    }
+
+    private static class InstanceHolder {
+        private static final GlobusApi INSTANCE = new GlobusApi();
+    }
+
+    public static GlobusApi instance() {
+        return InstanceHolder.INSTANCE;
+    }
+
+    @Override
+    public Verb getAccessTokenVerb() {
+        return Verb.POST;
+    }
+
+    @Override
+    public String getAccessTokenEndpoint() {
+        return "https://auth.globus.org/v2/oauth2/token";
+    }
+
+    @Override
+    protected String getAuthorizationBaseUrl() {
+        return "https://auth.globus.org/v2/oauth2/authorize";
+    }
+
+    @Override
+    public TokenExtractor<OAuth2AccessToken> getAccessTokenExtractor() {
+        return OAuth2AccessTokenJsonExtractor.instance();
+    }
+
+    public TokenExtractor<OAuth2AccessToken> getAuthorizationExtractor() {
+        return OAuth2AccessTokenExtractor.instance();
+    }
+
 }

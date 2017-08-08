@@ -4,7 +4,7 @@ package org.eurekaclinical.scribeupext.profile;
  * #%L
  * Eureka! Clinical ScribeUP Extensions
  * %%
- * Copyright (C) 2014 Emory University
+ * Copyright (C) 2014, 2017 Emory University & The Johns Hopkins University
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,10 @@ package org.eurekaclinical.scribeupext.profile;
 /**
  *
  * @author Andrew Post
+ * @author Stephen Granite
  */
 public class GlobusAttributesDefinition {
-	public static final String USERNAME = "username";
-	public static final String FULLNAME = "fullname";
+	public static final String USERNAME = "preferred_username"; //previously username 
+	public static final String FULLNAME = "name"; //previously fullname
 	public static final String EMAIL = "email";
 }
