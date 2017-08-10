@@ -48,7 +48,7 @@ import org.scribe.up.provider.exception.HttpException;
 public class GlobusProvider {
 
 	private OAuth20Service service;
-	private String key, secret, callBackUrl, scope, state;
+	private String key, secret, callbackUrl, scope, state;
 
 	protected GlobusProvider newProvider() {
 		return new GlobusProvider();
@@ -57,7 +57,7 @@ public class GlobusProvider {
 	protected void internalInit() {
 		setService(new ServiceBuilder(key)
 				.apiSecret(secret)
-				.callback(callBackUrl)
+				.callback(callbackUrl)
 				.scope(scope)
 				.state(state)
 				.build(GlobusApi.instance()));
@@ -129,12 +129,12 @@ public class GlobusProvider {
 		this.secret = secret;
 	}
 
-	public String getCallBackUrl() {
-		return callBackUrl;
+	public String getCallbackUrl() {
+		return callbackUrl;
 	}
 
-	public void setCallBackUrl(String callBackUrl) {
-		this.callBackUrl = callBackUrl;
+	public void setCallbackUrl(String callBackUrl) {
+		this.callbackUrl = callBackUrl;
 	}
 
 	public String getState() {

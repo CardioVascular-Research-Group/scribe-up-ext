@@ -48,11 +48,11 @@ import org.scribe.up.provider.exception.HttpException;
 * @author Stephen Granite
 * 
 */
-public class GlobusTest {
+public class GlobusExample {
 
 	private static final String NETWORK_NAME = "Globus";
 
-	public GlobusTest() {
+	public GlobusExample() {
 
 	}
 
@@ -69,7 +69,7 @@ public class GlobusTest {
 		provider.setSecret(clientSecret);
 		provider.setScope(scope);
 		provider.setState(secretState);
-		provider.setCallBackUrl(callBackUrl);
+		provider.setCallbackUrl(callBackUrl);
 		String body = null;
 
 		try {
